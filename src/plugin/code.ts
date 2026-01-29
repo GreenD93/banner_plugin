@@ -19,8 +19,8 @@ function hex(hex: string) {
 /* =========================================================
  * Generate variation / home_banner
  * ========================================================= */
-async function generateHomeBanner() {
-  /* ---------- Root : variation / home_banner ---------- */
+async function generateHomeBanner(marketingCopy: { [key: string]: string }) {
+  /* ---------- Root ---------- */
   const root = figma.createFrame();
   root.name = t.root.name;
   root.layoutMode = 'HORIZONTAL';
@@ -89,8 +89,6 @@ async function generateHomeBanner() {
   inner.resize(t.textInner.width, t.textInner.height);
   inner.itemSpacing = t.textInner.gap;
   inner.paddingLeft = t.textInner.paddingLeft;
-  inner.primaryAxisAlignItems = 'MIN';
-  inner.counterAxisAlignItems = 'MIN';
   inner.fills = [];
 
   text.appendChild(inner);
@@ -103,7 +101,6 @@ async function generateHomeBanner() {
   wrapper.layoutMode = 'HORIZONTAL';
   wrapper.resize(t.textWrapper.width, t.textWrapper.height);
   wrapper.primaryAxisAlignItems = 'CENTER';
-  wrapper.counterAxisAlignItems = 'CENTER';
   wrapper.fills = [];
 
   inner.appendChild(wrapper);
@@ -115,25 +112,28 @@ async function generateHomeBanner() {
   col.name = t.textColumn.name;
   col.layoutMode = 'VERTICAL';
   col.resize(t.textColumn.width, t.textColumn.height);
-  col.primaryAxisAlignItems = 'CENTER';
-  col.counterAxisAlignItems = 'MIN';
   col.itemSpacing = t.textColumn.gap;
   col.fills = [];
 
   wrapper.appendChild(col);
 
   /* ======================================================
-   * texts
+   * texts (Figma-safe)
    * ====================================================== */
   for (const item of t.texts) {
+    let content = '';
+    if (marketingCopy && marketingCopy[item.slot]) {
+      content = marketingCopy[item.slot];
+    }
+
     await figma.loadFontAsync({
       family: 'Inter',
       style: item.weight === 700 ? 'Bold' : 'Regular',
     });
 
     const txt = figma.createText();
-    txt.name = item.name;
-    txt.characters = item.name;
+    txt.name = item.slot;
+    txt.characters = content;
     txt.fontSize = item.fontSize;
     txt.lineHeight = { value: item.lineHeight, unit: 'PIXELS' };
     txt.fontName = {
@@ -143,7 +143,9 @@ async function generateHomeBanner() {
     txt.fills = [{ type: 'SOLID', color: hex(item.color) }];
     txt.textAutoResize = 'HEIGHT';
 
-    if (item.opacity != null) txt.opacity = item.opacity;
+    if (item.opacity != null) {
+      txt.opacity = item.opacity;
+    }
 
     col.appendChild(txt);
   }
@@ -165,7 +167,14 @@ async function generateHomeBanner() {
  * ========================================================= */
 figma.ui.onmessage = async (msg) => {
   if (msg.type === 'generate-template') {
-    await generateHomeBanner();
+    const marketingCopy = {
+      eyebrow: 'D-3',
+      titleLine1: '지금 안 사면',
+      titleLine2: '후회할 혜택',
+      caption: '단 3일간 진행됩니다',
+    };
+
+    await generateHomeBanner(marketingCopy);
     figma.notify('variation / home_banner 생성 완료');
   }
 };
