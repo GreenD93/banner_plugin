@@ -4,9 +4,6 @@ import { CARD_TEMPLATE as t } from './templates/card';
 
 figma.showUI(__html__, { width: 400, height: 1000 });
 
-/* =========================================================
- * Utils
- * ========================================================= */
 function hex(hex: string) {
   const c = hex.replace('#', '');
   return {
@@ -17,31 +14,39 @@ function hex(hex: string) {
 }
 
 /* =========================================================
- * Generate variation / home_banner
+ * Generate single banner
  * ========================================================= */
-async function generateHomeBanner(marketingCopy: { [key: string]: string }) {
+async function generateHomeBanner(
+  data: {
+    image: { color: string };
+    [key: string]: any;
+  },
+  offsetY: number
+) {
   /* ---------- Root ---------- */
   const root = figma.createFrame();
   root.name = t.root.name;
   root.layoutMode = 'HORIZONTAL';
   root.resize(t.root.width, t.root.height);
+  root.y = offsetY;
   root.primaryAxisSizingMode = 'FIXED';
   root.counterAxisSizingMode = 'FIXED';
   root.fills = [];
-
   figma.currentPage.appendChild(root);
 
   /* ======================================================
-   * img
+   * img (FIXED)
    * ====================================================== */
   const img = figma.createFrame();
   img.name = t.img.name;
   img.layoutMode = 'VERTICAL';
   img.resize(t.img.width, t.img.height);
-  img.primaryAxisAlignItems = 'CENTER';
-  img.counterAxisAlignItems = 'MIN';
-  img.itemSpacing = t.img.gap;
 
+  // ⭐️ 핵심 수정
+  img.primaryAxisAlignItems = 'CENTER'; // justify-content: center
+  img.counterAxisAlignItems = 'MIN';    // align-items: flex-start
+
+  img.itemSpacing = t.img.gap;
   img.paddingTop = t.img.padding.top;
   img.paddingBottom = t.img.padding.bottom;
   img.paddingLeft = t.img.padding.left;
@@ -53,11 +58,13 @@ async function generateHomeBanner(marketingCopy: { [key: string]: string }) {
 
   root.appendChild(img);
 
-  const imgIcon = figma.createRectangle();
-  imgIcon.name = t.imgIcon.name;
-  imgIcon.resize(t.imgIcon.width, t.imgIcon.height);
-  imgIcon.fills = [{ type: 'SOLID', color: hex(t.imgIcon.background) }];
-  img.appendChild(imgIcon);
+  // AI image placeholder
+  const imageRect = figma.createRectangle();
+  imageRect.name = t.imgIcon.name;
+  imageRect.resize(t.imgIcon.width, t.imgIcon.height);
+  imageRect.cornerRadius = t.imgIcon.radius;
+  imageRect.fills = [{ type: 'SOLID', color: hex(data.image.color) }];
+  img.appendChild(imageRect);
 
   /* ======================================================
    * text
@@ -89,21 +96,11 @@ async function generateHomeBanner(marketingCopy: { [key: string]: string }) {
   inner.resize(t.textInner.width, t.textInner.height);
   inner.itemSpacing = t.textInner.gap;
   inner.paddingLeft = t.textInner.paddingLeft;
+  inner.primaryAxisAlignItems = 'MIN';
+  inner.counterAxisAlignItems = 'MIN';
   inner.fills = [];
 
   text.appendChild(inner);
-
-  /* ======================================================
-   * text wrapper
-   * ====================================================== */
-  const wrapper = figma.createFrame();
-  wrapper.name = t.textWrapper.name;
-  wrapper.layoutMode = 'HORIZONTAL';
-  wrapper.resize(t.textWrapper.width, t.textWrapper.height);
-  wrapper.primaryAxisAlignItems = 'CENTER';
-  wrapper.fills = [];
-
-  inner.appendChild(wrapper);
 
   /* ======================================================
    * text column
@@ -113,17 +110,19 @@ async function generateHomeBanner(marketingCopy: { [key: string]: string }) {
   col.layoutMode = 'VERTICAL';
   col.resize(t.textColumn.width, t.textColumn.height);
   col.itemSpacing = t.textColumn.gap;
+  col.primaryAxisAlignItems = 'CENTER';
+  col.counterAxisAlignItems = 'MIN';
   col.fills = [];
 
-  wrapper.appendChild(col);
+  inner.appendChild(col);
 
   /* ======================================================
-   * texts (Figma-safe)
+   * texts
    * ====================================================== */
   for (const item of t.texts) {
     let content = '';
-    if (marketingCopy && marketingCopy[item.slot]) {
-      content = marketingCopy[item.slot];
+    if (data && data[item.slot]) {
+      content = data[item.slot];
     }
 
     await figma.loadFontAsync({
@@ -132,7 +131,6 @@ async function generateHomeBanner(marketingCopy: { [key: string]: string }) {
     });
 
     const txt = figma.createText();
-    txt.name = item.slot;
     txt.characters = content;
     txt.fontSize = item.fontSize;
     txt.lineHeight = { value: item.lineHeight, unit: 'PIXELS' };
@@ -143,23 +141,10 @@ async function generateHomeBanner(marketingCopy: { [key: string]: string }) {
     txt.fills = [{ type: 'SOLID', color: hex(item.color) }];
     txt.textAutoResize = 'HEIGHT';
 
-    if (item.opacity != null) {
-      txt.opacity = item.opacity;
-    }
+    if (item.opacity != null) txt.opacity = item.opacity;
 
     col.appendChild(txt);
   }
-
-  /* ======================================================
-   * close icon (placeholder)
-   * ====================================================== */
-  const close = figma.createFrame();
-  close.name = t.closeIcon.name;
-  close.resize(t.closeIcon.width, t.closeIcon.height);
-  close.fills = [];
-  inner.appendChild(close);
-
-  figma.viewport.scrollAndZoomIntoView([root]);
 }
 
 /* =========================================================
@@ -167,14 +152,29 @@ async function generateHomeBanner(marketingCopy: { [key: string]: string }) {
  * ========================================================= */
 figma.ui.onmessage = async (msg) => {
   if (msg.type === 'generate-template') {
-    const marketingCopy = {
-      eyebrow: 'D-3',
-      titleLine1: '지금 안 사면',
-      titleLine2: '후회할 혜택',
-      caption: '단 3일간 진행됩니다',
-    };
+    const response = [
+      {
+        image: { color: '#FFADAD' },
+        eyebrow: 'D-3',
+        titleLine1: '지금 안 사면',
+        titleLine2: '후회할 혜택',
+        caption: '단 3일간 진행됩니다',
+      },
+      {
+        image: { color: '#A0C4FF' },
+        eyebrow: 'NEW',
+        titleLine1: '봄맞이 세일',
+        titleLine2: '최대 50% 할인',
+        caption: '인기 상품 한정',
+      },
+    ];
 
-    await generateHomeBanner(marketingCopy);
-    figma.notify('variation / home_banner 생성 완료');
+    const startY = figma.viewport.center.y;
+
+    for (let i = 0; i < response.length; i++) {
+      await generateHomeBanner(response[i], startY + i * 140);
+    }
+
+    figma.notify('home_banner 2개 생성 완료');
   }
 };
