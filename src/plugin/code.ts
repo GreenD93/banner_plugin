@@ -20,14 +20,15 @@ function hex(hex: string) {
  * Generate variation / home_banner
  * ========================================================= */
 async function generateHomeBanner() {
-  /* ---------- Root ---------- */
+  /* ---------- Root : variation / home_banner ---------- */
   const root = figma.createFrame();
   root.name = t.root.name;
   root.layoutMode = 'HORIZONTAL';
   root.resize(t.root.width, t.root.height);
-  root.fills = [];
   root.primaryAxisSizingMode = 'FIXED';
   root.counterAxisSizingMode = 'FIXED';
+  root.fills = [];
+
   figma.currentPage.appendChild(root);
 
   /* ======================================================
@@ -39,6 +40,7 @@ async function generateHomeBanner() {
   img.resize(t.img.width, t.img.height);
   img.primaryAxisAlignItems = 'CENTER';
   img.counterAxisAlignItems = 'MIN';
+  img.itemSpacing = t.img.gap;
 
   img.paddingTop = t.img.padding.top;
   img.paddingBottom = t.img.padding.bottom;
@@ -87,6 +89,8 @@ async function generateHomeBanner() {
   inner.resize(t.textInner.width, t.textInner.height);
   inner.itemSpacing = t.textInner.gap;
   inner.paddingLeft = t.textInner.paddingLeft;
+  inner.primaryAxisAlignItems = 'MIN';
+  inner.counterAxisAlignItems = 'MIN';
   inner.fills = [];
 
   text.appendChild(inner);
@@ -99,7 +103,9 @@ async function generateHomeBanner() {
   wrapper.layoutMode = 'HORIZONTAL';
   wrapper.resize(t.textWrapper.width, t.textWrapper.height);
   wrapper.primaryAxisAlignItems = 'CENTER';
+  wrapper.counterAxisAlignItems = 'CENTER';
   wrapper.fills = [];
+
   inner.appendChild(wrapper);
 
   /* ======================================================
@@ -113,8 +119,12 @@ async function generateHomeBanner() {
   col.counterAxisAlignItems = 'MIN';
   col.itemSpacing = t.textColumn.gap;
   col.fills = [];
+
   wrapper.appendChild(col);
 
+  /* ======================================================
+   * texts
+   * ====================================================== */
   for (const item of t.texts) {
     await figma.loadFontAsync({
       family: 'Inter',
@@ -131,6 +141,8 @@ async function generateHomeBanner() {
       style: item.weight === 700 ? 'Bold' : 'Regular',
     };
     txt.fills = [{ type: 'SOLID', color: hex(item.color) }];
+    txt.textAutoResize = 'HEIGHT';
+
     if (item.opacity != null) txt.opacity = item.opacity;
 
     col.appendChild(txt);

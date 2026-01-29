@@ -2,15 +2,13 @@
 
 export const CARD_TEMPLATE = {
     /* ======================================================
-     * Root : variation / home_banner
+     * Root : variation / home_banner (최상위)
      * ====================================================== */
     root: {
       name: 'variation / home_banner',
       width: 335,
       height: 122,
       layout: 'HORIZONTAL',
-      padding: 0,
-      align: 'FLEX_START',
     },
   
     /* ======================================================
@@ -21,8 +19,6 @@ export const CARD_TEMPLATE = {
       width: 60,
       height: 122,
       layout: 'VERTICAL',
-      justify: 'CENTER',
-      align: 'FLEX_START',
       gap: 10,
       padding: {
         top: 18,
@@ -52,7 +48,6 @@ export const CARD_TEMPLATE = {
       width: 275,
       height: 122,
       layout: 'HORIZONTAL',
-      align: 'CENTER',
       padding: {
         top: 18,
         bottom: 18,
@@ -74,7 +69,6 @@ export const CARD_TEMPLATE = {
       width: 255,
       height: 86,
       layout: 'HORIZONTAL',
-      align: 'FLEX_START',
       gap: 8,
       paddingLeft: 16,
     },
@@ -87,7 +81,6 @@ export const CARD_TEMPLATE = {
       width: 217,
       height: 86,
       layout: 'HORIZONTAL',
-      align: 'CENTER',
     },
   
     /* ======================================================
@@ -98,8 +91,6 @@ export const CARD_TEMPLATE = {
       width: 217,
       height: 86,
       layout: 'VERTICAL',
-      justify: 'CENTER',
-      align: 'FLEX_START',
       gap: 2,
     },
   
