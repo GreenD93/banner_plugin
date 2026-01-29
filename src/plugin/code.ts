@@ -1,207 +1,159 @@
-figma.showUI(__html__, {
-  width: 400,
-  height: 1000,
-});
+// src/plugin/code.ts
+
+import { CARD_TEMPLATE as t } from './templates/card';
+
+figma.showUI(__html__, { width: 400, height: 1000 });
 
 /* =========================================================
- * Extract : Figma Node → JSON (절대좌표 기반)
+ * Utils
  * ========================================================= */
-
-async function extractNode(node: SceneNode): Promise<any> {
-  var base: any = {
-    type: node.type,
-    name: node.name,
-    x: 'x' in node ? (node as any).x : 0,
-    y: 'y' in node ? (node as any).y : 0,
-    width: 'width' in node ? (node as any).width : 0,
-    height: 'height' in node ? (node as any).height : 0,
+function hex(hex: string) {
+  const c = hex.replace('#', '');
+  return {
+    r: parseInt(c.slice(0, 2), 16) / 255,
+    g: parseInt(c.slice(2, 4), 16) / 255,
+    b: parseInt(c.slice(4, 6), 16) / 255,
   };
+}
 
-  /* ---------- ASSET (icon frame → image) ---------- */
-  if (
-    node.type === 'FRAME' &&
-    node.name.indexOf('asset') === 0
-  ) {
-    var bytes = await node.exportAsync({ format: 'PNG' });
-    var image = figma.createImage(bytes);
+/* =========================================================
+ * Generate variation / home_banner
+ * ========================================================= */
+async function generateHomeBanner() {
+  /* ---------- Root ---------- */
+  const root = figma.createFrame();
+  root.name = t.root.name;
+  root.layoutMode = 'HORIZONTAL';
+  root.resize(t.root.width, t.root.height);
+  root.fills = [];
+  root.primaryAxisSizingMode = 'FIXED';
+  root.counterAxisSizingMode = 'FIXED';
+  figma.currentPage.appendChild(root);
 
-    return {
-      type: 'ASSET',
-      name: node.name,
-      x: node.x,
-      y: node.y,
-      width: node.width,
-      height: node.height,
-      imageHash: image.hash,
+  /* ======================================================
+   * img
+   * ====================================================== */
+  const img = figma.createFrame();
+  img.name = t.img.name;
+  img.layoutMode = 'VERTICAL';
+  img.resize(t.img.width, t.img.height);
+  img.primaryAxisAlignItems = 'CENTER';
+  img.counterAxisAlignItems = 'MIN';
+
+  img.paddingTop = t.img.padding.top;
+  img.paddingBottom = t.img.padding.bottom;
+  img.paddingLeft = t.img.padding.left;
+  img.paddingRight = t.img.padding.right;
+
+  img.fills = [{ type: 'SOLID', color: hex(t.img.background) }];
+  img.topLeftRadius = t.img.radius.topLeft;
+  img.bottomLeftRadius = t.img.radius.bottomLeft;
+
+  root.appendChild(img);
+
+  const imgIcon = figma.createRectangle();
+  imgIcon.name = t.imgIcon.name;
+  imgIcon.resize(t.imgIcon.width, t.imgIcon.height);
+  imgIcon.fills = [{ type: 'SOLID', color: hex(t.imgIcon.background) }];
+  img.appendChild(imgIcon);
+
+  /* ======================================================
+   * text
+   * ====================================================== */
+  const text = figma.createFrame();
+  text.name = t.text.name;
+  text.layoutMode = 'HORIZONTAL';
+  text.resize(t.text.width, t.text.height);
+  text.primaryAxisAlignItems = 'CENTER';
+  text.counterAxisAlignItems = 'CENTER';
+
+  text.paddingTop = t.text.padding.top;
+  text.paddingBottom = t.text.padding.bottom;
+  text.paddingLeft = t.text.padding.left;
+  text.paddingRight = t.text.padding.right;
+
+  text.fills = [{ type: 'SOLID', color: hex(t.text.background) }];
+  text.topRightRadius = t.text.radius.topRight;
+  text.bottomRightRadius = t.text.radius.bottomRight;
+
+  root.appendChild(text);
+
+  /* ======================================================
+   * Frame 427321433
+   * ====================================================== */
+  const inner = figma.createFrame();
+  inner.name = t.textInner.name;
+  inner.layoutMode = 'HORIZONTAL';
+  inner.resize(t.textInner.width, t.textInner.height);
+  inner.itemSpacing = t.textInner.gap;
+  inner.paddingLeft = t.textInner.paddingLeft;
+  inner.fills = [];
+
+  text.appendChild(inner);
+
+  /* ======================================================
+   * text wrapper
+   * ====================================================== */
+  const wrapper = figma.createFrame();
+  wrapper.name = t.textWrapper.name;
+  wrapper.layoutMode = 'HORIZONTAL';
+  wrapper.resize(t.textWrapper.width, t.textWrapper.height);
+  wrapper.primaryAxisAlignItems = 'CENTER';
+  wrapper.fills = [];
+  inner.appendChild(wrapper);
+
+  /* ======================================================
+   * text column
+   * ====================================================== */
+  const col = figma.createFrame();
+  col.name = t.textColumn.name;
+  col.layoutMode = 'VERTICAL';
+  col.resize(t.textColumn.width, t.textColumn.height);
+  col.primaryAxisAlignItems = 'CENTER';
+  col.counterAxisAlignItems = 'MIN';
+  col.itemSpacing = t.textColumn.gap;
+  col.fills = [];
+  wrapper.appendChild(col);
+
+  for (const item of t.texts) {
+    await figma.loadFontAsync({
+      family: 'Inter',
+      style: item.weight === 700 ? 'Bold' : 'Regular',
+    });
+
+    const txt = figma.createText();
+    txt.name = item.name;
+    txt.characters = item.name;
+    txt.fontSize = item.fontSize;
+    txt.lineHeight = { value: item.lineHeight, unit: 'PIXELS' };
+    txt.fontName = {
+      family: 'Inter',
+      style: item.weight === 700 ? 'Bold' : 'Regular',
     };
+    txt.fills = [{ type: 'SOLID', color: hex(item.color) }];
+    if (item.opacity != null) txt.opacity = item.opacity;
+
+    col.appendChild(txt);
   }
 
-  /* ---------- TEXT ---------- */
-  if (node.type === 'TEXT') {
-    var t = node as TextNode;
-    base.characters = t.characters;
-    base.fontSize = t.fontSize;
+  /* ======================================================
+   * close icon (placeholder)
+   * ====================================================== */
+  const close = figma.createFrame();
+  close.name = t.closeIcon.name;
+  close.resize(t.closeIcon.width, t.closeIcon.height);
+  close.fills = [];
+  inner.appendChild(close);
 
-    if (t.fontName && typeof t.fontName === 'object') {
-      base.fontName = {
-        family: t.fontName.family,
-        style: t.fontName.style,
-      };
-    }
-
-    base.fills = Array.isArray(t.fills)
-      ? JSON.parse(JSON.stringify(t.fills))
-      : [];
-  }
-
-  /* ---------- RECTANGLE ---------- */
-  if (node.type === 'RECTANGLE') {
-    var r = node as RectangleNode;
-    base.fills = Array.isArray(r.fills)
-      ? JSON.parse(JSON.stringify(r.fills))
-      : [];
-    base.cornerRadius =
-      typeof r.cornerRadius === 'number'
-        ? r.cornerRadius
-        : 0;
-  }
-
-  /* ---------- CHILDREN ---------- */
-  if ('children' in node) {
-    base.children = [];
-    for (var i = 0; i < (node as any).children.length; i++) {
-      base.children.push(
-        await extractNode((node as any).children[i])
-      );
-    }
-  }
-
-  return base;
+  figma.viewport.scrollAndZoomIntoView([root]);
 }
 
 /* =========================================================
- * Render : JSON → Figma Node (절대좌표 기반)
+ * UI handler
  * ========================================================= */
-
-async function renderNode(
-  data: any,
-  parent: BaseNode & ChildrenMixin
-) {
-  var node: SceneNode | null = null;
-
-  if (data.type === 'FRAME') {
-    var f = figma.createFrame();
-    f.resize(data.width, data.height);
-    f.x = data.x;
-    f.y = data.y;
-    node = f;
-  }
-
-  if (data.type === 'TEXT') {
-    var text = figma.createText();
-    var font = data.fontName
-      ? data.fontName
-      : { family: 'Inter', style: 'Regular' };
-
-    await figma.loadFontAsync(font);
-
-    text.fontName = font;
-    text.characters = data.characters || '';
-    text.fontSize = data.fontSize || 12;
-    text.fills = Array.isArray(data.fills)
-      ? data.fills
-      : [];
-
-    text.x = data.x;
-    text.y = data.y;
-    node = text;
-  }
-
-  if (data.type === 'ASSET') {
-    var rect = figma.createRectangle();
-    rect.resize(data.width, data.height);
-    rect.x = data.x;
-    rect.y = data.y;
-    rect.fills = [
-      {
-        type: 'IMAGE',
-        imageHash: data.imageHash,
-        scaleMode: 'FILL',
-      },
-    ];
-    node = rect;
-  }
-
-  if (data.type === 'RECTANGLE') {
-    var rr = figma.createRectangle();
-    rr.resize(data.width, data.height);
-    rr.x = data.x;
-    rr.y = data.y;
-    rr.fills = Array.isArray(data.fills)
-      ? data.fills
-      : [];
-    rr.cornerRadius = data.cornerRadius || 0;
-    node = rr;
-  }
-
-  if (!node) return;
-
-  node.name = data.name;
-  parent.appendChild(node);
-
-  if (data.children) {
-    for (var j = 0; j < data.children.length; j++) {
-      await renderNode(data.children[j], node as any);
-    }
-  }
-}
-
-/* =========================================================
- * UI Message Handler
- * ========================================================= */
-
-figma.ui.onmessage = async function (msg) {
-  switch (msg.type) {
-    case 'extract-template': {
-      var selection = figma.currentPage.selection;
-      if (selection.length !== 1) {
-        figma.notify('Frame 하나만 선택하세요');
-        return;
-      }
-
-      var json = await extractNode(selection[0]);
-      await figma.clientStorage.setAsync(
-        'default-template',
-        json
-      );
-
-      console.log('📦 TEMPLATE JSON', json);
-      figma.notify('템플릿 추출 완료');
-      break;
-    }
-
-    case 'generate-template': {
-      var stored = await figma.clientStorage.getAsync(
-        'default-template'
-      );
-      if (!stored) {
-        figma.notify('저장된 템플릿이 없습니다');
-        return;
-      }
-
-      var frame = figma.createFrame();
-      frame.name = stored.name + '_generated';
-      frame.resize(stored.width, stored.height);
-      frame.x = stored.x;
-      frame.y = stored.y;
-      figma.currentPage.appendChild(frame);
-
-      for (var i = 0; i < stored.children.length; i++) {
-        await renderNode(stored.children[i], frame);
-      }
-
-      figma.notify('🎉 템플릿 생성 완료');
-      break;
-    }
+figma.ui.onmessage = async (msg) => {
+  if (msg.type === 'generate-template') {
+    await generateHomeBanner();
+    figma.notify('variation / home_banner 생성 완료');
   }
 };

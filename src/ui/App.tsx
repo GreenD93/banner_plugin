@@ -100,7 +100,6 @@ export default function App() {
           </button>
 
           <button
-            style={styles.resetButton}
             onClick={() =>
               parent.postMessage(
                 { pluginMessage: { type: 'generate-template' } },
