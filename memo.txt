@@ -1,0 +1,18 @@
+src/
+ ├─ ui/
+ │   ├─ index.html
+ │   ├─ main.tsx
+ │   ├─ App.tsx
+ │   ├─ components/
+ │   │   └─ ActionButton.tsx
+ ├─ plugin/
+ │   ├─ code.ts
+ │   ├─ actions/
+ │   │   ├─ createRect.ts
+ │   │   └─ renameLayer.ts
+ ├─ shared/
+ │   ├─ messages.ts
+ ├─ manifest.json
+ ├─ package.json
+ ├─ README.md
+ ├─ vite.config.js

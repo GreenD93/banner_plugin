@@ -1,0 +1,27 @@
+{
+  "name": "figma-resa-plugin",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build:ui": "vite build",
+    "build:code": "esbuild src/plugin/code.ts --bundle --outfile=dist/code.js --platform=node --format=cjs",
+    "build:manifest": "cp manifest.json dist/manifest.json",
+    "build": "npm run build:ui && npm run build:code && npm run build:manifest"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.9",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^4.3.0",
+    "esbuild": "^0.27.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "~5.9.3",
+    "vite": "^7.3.1",
+    "vite-plugin-singlefile": "^2.0.1"
+  },
+  "dependencies": {
+    "build": "^0.1.4"
+  }
+}
