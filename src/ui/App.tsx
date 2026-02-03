@@ -10,6 +10,9 @@ export default function App() {
   /* ===== state ===== */
 
   const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingDots, setTypingDots] = useState('.');
+
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: 'assistant', text: '안녕하세요! 무엇을 도와드릴까요?' },
   ]);
@@ -17,19 +20,37 @@ export default function App() {
   const [cardType, setCardType] = useState<'home' | 'popup'>('home');
   const [count, setCount] = useState<number>(2);
 
-  // 🔒 전송 중복 방지용 ref (핵심)
+  // 🔒 전송 중복 방지
   const sendingRef = useRef(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
   /* ===== effects ===== */
 
+  // 타이핑 점 애니메이션
+  useEffect(() => {
+    if (!isTyping) return;
+
+    const dots = ['.', '..', '...'];
+    let index = 0;
+
+    const interval = setInterval(() => {
+      index = (index + 1) % dots.length;
+      setTypingDots(dots[index]);
+    }, 400);
+
+    return () => clearInterval(interval);
+  }, [isTyping]);
+
+  // plugin → UI 메시지 수신
   useEffect(() => {
     const handler = (event: MessageEvent) => {
       const msg = (event as any)?.data?.pluginMessage;
       if (!msg) return;
 
       if (msg.type === 'assistant-message') {
+        setIsTyping(false);
+        setTypingDots('.');
         setMessages((prev) => [
           ...prev,
           { role: 'assistant', text: msg.text },
@@ -41,27 +62,26 @@ export default function App() {
     return () => window.removeEventListener('message', handler);
   }, []);
 
+  // 스크롤 자동 하단
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages]);
+  }, [messages, isTyping]);
 
   /* ===== handlers ===== */
 
   const sendMessage = () => {
-    // ⭐️ 중복 전송 방지
     if (sendingRef.current) return;
 
     const text = input.trim();
     if (!text) return;
 
     sendingRef.current = true;
+    setIsTyping(true);
 
-    // UI에 사용자 메시지 추가
     setMessages((prev) => [...prev, { role: 'user', text }]);
     setInput('');
 
-    // plugin으로 전달
     parent.postMessage(
       {
         pluginMessage: {
@@ -72,7 +92,6 @@ export default function App() {
       '*'
     );
 
-    // 다음 tick에서 해제
     setTimeout(() => {
       sendingRef.current = false;
     }, 0);
@@ -83,6 +102,8 @@ export default function App() {
       { role: 'assistant', text: '안녕하세요! 무엇을 도와드릴까요?' },
     ]);
     setInput('');
+    setIsTyping(false);
+    setTypingDots('.');
   };
 
   const handleKeyDown = (
@@ -106,7 +127,6 @@ export default function App() {
       {/* ===== Top Control ===== */}
       <div style={styles.topWrapper}>
         <div style={styles.topCard}>
-          {/* Left */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={styles.topTitle}>BannerMate</div>
 
@@ -141,26 +161,23 @@ export default function App() {
             </div>
           </div>
 
-          {/* Right */}
-          <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-            <button
-              style={{ ...styles.buttonBase, ...styles.primaryButtonActive }}
-              onClick={() =>
-                parent.postMessage(
-                  {
-                    pluginMessage: {
-                      type: 'generate-template',
-                      cardType,
-                      count,
-                    },
+          <button
+            style={{ ...styles.buttonBase, ...styles.primaryButtonActive }}
+            onClick={() =>
+              parent.postMessage(
+                {
+                  pluginMessage: {
+                    type: 'generate-template',
+                    cardType,
+                    count,
                   },
-                  '*'
-                )
-              }
-            >
-              Generate
-            </button>
-          </div>
+                },
+                '*'
+              )
+            }
+          >
+            Generate
+          </button>
         </div>
       </div>
 
@@ -222,9 +239,32 @@ export default function App() {
                 </div>
               );
             })}
+
+            {/* Typing Indicator */}
+            {isTyping && (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'flex-start',
+                  marginBottom: 10,
+                }}
+              >
+                <div
+                  style={{
+                    ...styles.bubble,
+                    ...styles.botBubble,
+                    opacity: 0.6,
+                    fontStyle: 'italic',
+                    minWidth: 24,
+                  }}
+                >
+                  {typingDots}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Input */}
+          {/* Input (messages 밖!) */}
           <div style={styles.inputBar}>
             <textarea
               value={input}
