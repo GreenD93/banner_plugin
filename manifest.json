@@ -1,5 +1,5 @@
 {
-    "name": "Simple React Figma Plugin",
+    "name": "BannerMate",
     "id": "simple-react-figma-plugin",
     "api": "1.0.0",
     "main": "code.js",
