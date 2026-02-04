@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build:ui": "vite build",
-    "build:code": "esbuild src/plugin/code.ts --bundle --outfile=dist/code.js --platform=browser --format=esm",
+    "build:code": "esbuild src/plugin/code.ts --bundle --outfile=dist/code.js --platform=browser --format=esm --target=es2017",
     "build:manifest": "cp manifest.json dist/manifest.json",
     "build": "npm run build:ui && npm run build:code && npm run build:manifest"
   },
